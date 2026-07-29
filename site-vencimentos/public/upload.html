@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adicionar funcionários — Vencimentos de Experiência</title>
+<style>
+  body {
+    font-family: -apple-system, Arial, sans-serif; margin: 0; background:#f7f7f8; color:#222;
+    display:flex; align-items:center; justify-content:center; min-height:100vh;
+  }
+  .card {
+    background:#fff; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,.12);
+    padding: 28px; width: 100%; max-width: 420px;
+  }
+  h1 { font-size: 18px; margin: 0 0 6px; }
+  .sub { font-size: 13px; color:#666; margin-bottom: 20px; }
+  label { display:block; font-size: 13px; margin-bottom: 6px; color:#333; }
+  input[type=password], input[type=file] {
+    width: 100%; box-sizing: border-box; padding: 9px 10px; margin-bottom: 16px;
+    border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
+  }
+  button {
+    width: 100%; padding: 10px; background:#2c2c2c; color:#fff; border:none;
+    border-radius: 6px; font-size: 14px; cursor:pointer;
+  }
+  button:hover { background:#3d3d3d; }
+  button:disabled { opacity:.6; cursor:default; }
+  #msg { margin-top: 14px; font-size: 13px; white-space: pre-line; }
+  #msg.ok { color:#1a7a1a; }
+  #msg.err { color:#b3261e; }
+  a.back { display:inline-block; margin-top: 18px; font-size: 13px; color:#555; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Adicionar novos funcionários</h1>
+    <div class="sub">Envie um arquivo Word, Excel ou PDF com os novos funcionários. Duplicados (já cadastrados) são ignorados automaticamente.</div>
+    <form id="form">
+      <label for="password">Senha</label>
+      <input type="password" id="password" name="password" required autocomplete="current-password">
+
+      <label for="file">Arquivo (.xlsx, .xls, .csv, .docx ou .pdf)</label>
+      <input type="file" id="file" name="file" accept=".xlsx,.xls,.csv,.docx,.pdf" required>
+
+      <button type="submit" id="submitBtn">Enviar e importar</button>
+    </form>
+    <div id="msg"></div>
+    <a class="back" href="/">&larr; Voltar para o dashboard</a>
+  </div>
+
+<script>
+  const form = document.getElementById('form');
+  const msg = document.getElementById('msg');
+  const btn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    msg.className = '';
+    msg.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    const fd = new FormData(form);
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        msg.className = 'err';
+        msg.textContent = data.error || 'Erro ao processar o arquivo.';
+      } else {
+        let text = 'Arquivo "' + data.file + '" processado.\n';
+        text += data.adicionados + ' novo(s) adicionado(s), ' + data.duplicados + ' já existiam (ignorados).';
+        if (data.nomesAdicionados && data.nomesAdicionados.length) {
+          text += '\n\nNovos: ' + data.nomesAdicionados.join(', ');
+        }
+        msg.className = 'ok';
+        msg.textContent = text;
+        form.reset();
+      }
+    } catch (err) {
+      msg.className = 'err';
+      msg.textContent = 'Falha de conexão: ' + err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Enviar e importar';
+    }
+  });
+</script>
+</body>
+</html>

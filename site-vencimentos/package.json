@@ -1,0 +1,14 @@
+{
+  "name": "vencimentos-experiencia-mavaular",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0",
+    "xlsx": "^0.18.5",
+    "mammoth": "^1.8.0",
+    "pdfjs-dist": "3.11.174",
+    "dommatrix": "^0.1.1",
+    "cheerio": "^1.0.0"
+  }
+}

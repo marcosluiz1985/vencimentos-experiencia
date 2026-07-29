@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Vencimentos de Experiência</title>
+<style>
+  body { font-family: -apple-system, Arial, sans-serif; margin: 24px; background:#f7f7f8; color:#222; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .sub { color:#666; margin-bottom: 16px; font-size: 13px; }
+  .toolbar { display:flex; align-items:center; gap:10px; margin-bottom: 12px; }
+  #search {
+    flex: 1; max-width: 360px; padding: 8px 12px; font-size: 14px;
+    border: 1px solid #ccc; border-radius: 6px; background:#fff;
+  }
+  #count { font-size: 12px; color:#666; }
+  table { border-collapse: collapse; width: 100%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+  th {
+    background:#2c2c2c; color:#fff; position: sticky; top:0;
+    cursor: pointer; user-select: none; white-space: nowrap;
+  }
+  th:hover { background:#3d3d3d; }
+  th .arrow { display:inline-block; width: 12px; opacity: 0.6; }
+  th.sorted .arrow { opacity: 1; }
+  tr.vencido { background:#fde2e2; }
+  tr.urgente { background:#fff3cd; }
+  tr.ok { background:#fff; }
+  tr.hidden { display:none; }
+  .legend { margin-top: 14px; font-size: 12px; color:#555; }
+  .legend span { display:inline-block; width:12px; height:12px; margin-right:4px; vertical-align:middle; }
+</style>
+</head>
+<body>
+  <h1>Vencimentos de Contrato de Experiência</h1>
+  <div class="sub">Gerado em 29/07/2026 — antecedência de alerta: 5 dias — ordenado do vencimento mais próximo para o mais distante</div>
+  <div class="toolbar">
+    <input id="search" type="text" placeholder="Buscar por nome, setor, etapa, data ou status...">
+    <span id="count"></span>
+  </div>
+  <table id="tbl">
+    <thead>
+      <tr>
+        <th data-key="nome" data-type="text">Nome <span class="arrow"></span></th>
+        <th data-key="setor" data-type="text">Setor <span class="arrow"></span></th>
+        <th data-key="label" data-type="text">Etapa <span class="arrow"></span></th>
+        <th data-key="date" data-type="date">Data <span class="arrow"></span></th>
+        <th data-key="delta" data-type="delta">Status <span class="arrow"></span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class='urgente' data-delta='0' data-date='2026-07-29'><td>LIDIANA ALVES DOS SANTOS</td><td>CORTE/USINAGEM</td><td>30 DIAS</td><td>29/07/2026</td><td>VENCE HOJE</td></tr><tr class='urgente' data-delta='1' data-date='2026-07-30'><td>SANTINA ALVES CANUTO</td><td>APOIO</td><td>60 DIAS</td><td>30/07/2026</td><td>vence em 1 dia(s)</td></tr><tr class='vencido' data-delta='-5' data-date='2026-07-24'><td>KAUANE CRISTINA ROSA DA SILVA</td><td>EMBALAGEM</td><td>60 DIAS</td><td>24/07/2026</td><td>VENCIDO há 5 dia(s)</td></tr><tr class='vencido' data-delta='-5' data-date='2026-07-24'><td>WAGNER MARTINS</td><td>EMBALAGEM</td><td>60 DIAS</td><td>24/07/2026</td><td>VENCIDO há 5 dia(s)</td></tr><tr class='vencido' data-delta='-5' data-date='2026-07-24'><td>VITORIA OLIVEIRA DA SILVA</td><td>EMBALAGEM</td><td>60 DIAS</td><td>24/07/2026</td><td>VENCIDO há 5 dia(s)</td></tr><tr class='vencido' data-delta='-5' data-date='2026-07-24'><td>EDSON NEVES</td><td>CABINE DE PINTURA</td><td>60 DIAS</td><td>24/07/2026</td><td>VENCIDO há 5 dia(s)</td></tr><tr class='ok' data-delta='6' data-date='2026-08-04'><td>ROMERIO RESENDE MASSARDI</td><td>CORTE/USINAGEM</td><td>30 DIAS</td><td>04/08/2026</td><td>vence em 6 dia(s)</td></tr><tr class='ok' data-delta='6' data-date='2026-08-04'><td>KETLEN BARBOSA DE ASSIS</td><td>LIXACAO</td><td>30 DIAS</td><td>04/08/2026</td><td>vence em 6 dia(s)</td></tr><tr class='vencido' data-delta='-6' data-date='2026-07-23'><td>TIAGO DAMIAO SANTOS NASCIMENTO</td><td>LINHA DE PINTURA</td><td>60 DIAS</td><td>23/07/2026</td><td>VENCIDO há 6 dia(s)</td></tr><tr class='vencido' data-delta='-6' data-date='2026-07-23'><td>MARIA HELENA DA SILVA NASCIMENTO</td><td>EMBALAGEM</td><td>60 DIAS</td><td>23/07/2026</td><td>VENCIDO há 6 dia(s)</td></tr><tr class='vencido' data-delta='-7' data-date='2026-07-22'><td>EVILLY SANTOS CASTRO</td><td>EMBALAGEM</td><td>30 DIAS</td><td>22/07/2026</td><td>VENCIDO há 7 dia(s)</td></tr><tr class='ok' data-delta='8' data-date='2026-08-06'><td>VITORIA OLIVEIRA BALDEZ</td><td>EMBALAGEM</td><td>60 DIAS</td><td>06/08/2026</td><td>vence em 8 dia(s)</td></tr><tr class='vencido' data-delta='-12' data-date='2026-07-17'><td>LUIS FERNANDO TOME DECUPERO</td><td>CORTE/USINAGEM</td><td>60 DIAS</td><td>17/07/2026</td><td>VENCIDO há 12 dia(s)</td></tr><tr class='vencido' data-delta='-12' data-date='2026-07-17'><td>WILLIAN DOUGLAS RODRIGUES DA SILVA</td><td>CORTE/USINAGEM</td><td>60 DIAS</td><td>17/07/2026</td><td>VENCIDO há 12 dia(s)</td></tr><tr class='vencido' data-delta='-13' data-date='2026-07-16'><td>MARCELO ALVES VIEIRA</td><td>CORTE/USINAGEM</td><td>60 DIAS</td><td>16/07/2026</td><td>VENCIDO há 13 dia(s)</td></tr><tr class='vencido' data-delta='-19' data-date='2026-07-10'><td>BRUNA APARECIDA DA SILVA</td><td>EMBALAGEM</td><td>60 DIAS</td><td>10/07/2026</td><td>VENCIDO há 19 dia(s)</td></tr><tr class='vencido' data-delta='-20' data-date='2026-07-09'><td>EDILSON ANTUNES SOARES</td><td>ALMOXARIFADO</td><td>60 DIAS</td><td>09/07/2026</td><td>VENCIDO há 20 dia(s)</td></tr>
+    </tbody>
+  </table>
+  <div class="legend">
+    <span style="background:#fde2e2;"></span> vencido &nbsp;
+    <span style="background:#fff3cd;"></span> vence em até 5 dias &nbsp;
+    <span style="background:#fff;border:1px solid #ddd;"></span> ok
+  </div>
+
+<script>
+(function() {
+  const table = document.getElementById('tbl');
+  const tbody = table.querySelector('tbody');
+  const searchInput = document.getElementById('search');
+  const countEl = document.getElementById('count');
+  const headers = table.querySelectorAll('th');
+
+  function updateCount() {
+    const total = tbody.querySelectorAll('tr').length;
+    const visible = tbody.querySelectorAll('tr:not(.hidden)').length;
+    countEl.textContent = visible + ' de ' + total + ' registro(s)';
+  }
+
+  // ---- busca ----
+  searchInput.addEventListener('input', function() {
+    const q = searchInput.value.trim().toLowerCase();
+    tbody.querySelectorAll('tr').forEach(function(tr) {
+      const text = tr.textContent.toLowerCase();
+      tr.classList.toggle('hidden', q.length > 0 && !text.includes(q));
+    });
+    updateCount();
+  });
+
+  // ---- ordenação por clique no cabeçalho ----
+  let currentSort = { key: null, dir: 1 };
+
+  function cellValue(tr, colIndex, type) {
+    if (type === 'date') return tr.getAttribute('data-date') || '';
+    if (type === 'delta') return parseInt(tr.getAttribute('data-delta'), 10);
+    return tr.children[colIndex].textContent.trim().toLowerCase();
+  }
+
+  headers.forEach(function(th, colIndex) {
+    th.addEventListener('click', function() {
+      const key = th.getAttribute('data-key');
+      const type = th.getAttribute('data-type');
+      const dir = (currentSort.key === key) ? -currentSort.dir : 1;
+      currentSort = { key: key, dir: dir };
+
+      headers.forEach(function(h) {
+        h.classList.remove('sorted');
+        h.querySelector('.arrow').textContent = '';
+      });
+      th.classList.add('sorted');
+      th.querySelector('.arrow').textContent = dir === 1 ? '▲' : '▼';
+
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.sort(function(a, b) {
+        const va = cellValue(a, colIndex, type);
+        const vb = cellValue(b, colIndex, type);
+        if (va < vb) return -1 * dir;
+        if (va > vb) return 1 * dir;
+        return 0;
+      });
+      rows.forEach(function(tr) { tbody.appendChild(tr); });
+    });
+  });
+
+  updateCount();
+})();
+</script>
+</body>
+</html>
