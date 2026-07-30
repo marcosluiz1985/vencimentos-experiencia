@@ -157,7 +157,11 @@ async function extractFromPdf(buffer) {
   if (typeof globalThis.DOMMatrix === "undefined") {
     globalThis.DOMMatrix = (await import("dommatrix")).default;
   }
-  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  // A versão instalada (3.11.174) só publica build CommonJS em legacy/build
+  // (pdf.js), não existe pdf.mjs nessa versão. import() consegue carregar
+  // um módulo CJS normalmente a partir de ESM.
+  const pdfjsMod = await import("pdfjs-dist/legacy/build/pdf.js");
+  const pdfjsLib = pdfjsMod.getDocument ? pdfjsMod : pdfjsMod.default;
 
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
   const rows = [];
