@@ -19,7 +19,13 @@ function guessColumn(headerCell) {
   const h = normText(headerCell);
   if (!h) return null;
   if (h.includes("nome")) return "nome";
-  if (h.includes("setor")) return "setor";
+  if (h.includes("setor") || h.includes("departamento")) return "setor";
+  // relatórios de "contrato por prazo determinado" usam colunas como
+  // "Data início contr.", "Data fim contr." e "Data fim prorrog.": o fim do
+  // contrato inicial é o marco de 30 dias, e o fim da prorrogação é o de 60.
+  if (h.includes("fim") && h.includes("prorrog")) return "d60";
+  if (h.includes("fim") && h.includes("contr")) return "d30";
+  if (h.includes("inicio") && h.includes("contr")) return "contratacao";
   if (h.includes("contrat") || h.includes("admiss")) return "contratacao";
   if (h.includes("30") && h.includes("dia")) return "d30";
   if (h.includes("60") && h.includes("dia")) return "d60";
