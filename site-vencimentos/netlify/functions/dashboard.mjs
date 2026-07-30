@@ -131,6 +131,23 @@ export default async (req, context) => {
   tr.hidden { display:none; }
   .legend { margin-top: 14px; font-size: 12px; color:#555; }
   .legend span { display:inline-block; width:12px; height:12px; margin-right:4px; vertical-align:middle; }
+  #alertBanner {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    max-width: 560px; width: calc(100% - 40px); background:#2c2c2c; color:#fff;
+    border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.25);
+    padding: 16px 18px; display:none; z-index: 1000;
+  }
+  #alertBanner.show { display:block; }
+  #alertBanner .row { display:flex; align-items:flex-start; gap:10px; margin-bottom: 8px; }
+  #alertBanner .row:last-of-type { margin-bottom: 0; }
+  #alertBanner .icon { font-size: 16px; line-height: 1.4; }
+  #alertBanner .txt { font-size: 13px; line-height: 1.4; }
+  #alertBanner .txt b { font-weight:600; }
+  #alertBanner .close {
+    position:absolute; top:8px; right:10px; background:none; border:none; color:#aaa;
+    font-size: 16px; cursor:pointer; line-height:1;
+  }
+  #alertBanner .close:hover { color:#fff; }
 </style>
 </head>
 <body>
@@ -163,6 +180,11 @@ export default async (req, context) => {
     <span style="background:#fde2e2;"></span> vencido &nbsp;
     <span style="background:#fff3cd;"></span> vence em até ${LEAD_DAYS} dias &nbsp;
     <span style="background:#fff;border:1px solid #ddd;"></span> ok
+  </div>
+
+  <div id="alertBanner">
+    <button class="close" type="button" aria-label="Fechar">&times;</button>
+    <div id="alertContent"></div>
   </div>
 
 <script>
@@ -250,6 +272,41 @@ export default async (req, context) => {
 
   updateToggleLabel();
   applyFilters();
+
+  // ---- balão de aviso (hoje / faltam 5 dias) ----
+  const banner = document.getElementById('alertBanner');
+  const bannerContent = document.getElementById('alertContent');
+  const bannerClose = banner.querySelector('.close');
+
+  const allRows = Array.from(tbody.querySelectorAll('tr'));
+  const nomeOf = function(tr) { return tr.children[0].textContent.trim(); };
+  const setorOf = function(tr) { return tr.children[1].textContent.trim(); };
+
+  const hojeRows = allRows.filter(function(tr) { return parseInt(tr.getAttribute('data-delta'), 10) === 0; });
+  const cincoDiasRows = allRows.filter(function(tr) { return parseInt(tr.getAttribute('data-delta'), 10) === 5; });
+
+  function listNames(rows) {
+    return rows.map(function(tr) { return nomeOf(tr) + ' (' + setorOf(tr) + ')'; }).join(', ');
+  }
+
+  let bannerHtml = '';
+  if (hojeRows.length) {
+    bannerHtml += '<div class="row"><span class="icon">⚠️</span><span class="txt"><b>Vence hoje (' + hojeRows.length + '):</b> ' + listNames(hojeRows) + '</span></div>';
+  }
+  if (cincoDiasRows.length) {
+    bannerHtml += '<div class="row"><span class="icon">⏳</span><span class="txt"><b>Faltam 5 dias (' + cincoDiasRows.length + '):</b> ' + listNames(cincoDiasRows) + '</span></div>';
+  }
+
+  const STORAGE_KEY = 'vencimentos_banner_dismissed_' + '${today}';
+  if (bannerHtml && !sessionStorage.getItem(STORAGE_KEY)) {
+    bannerContent.innerHTML = bannerHtml;
+    banner.classList.add('show');
+  }
+
+  bannerClose.addEventListener('click', function() {
+    banner.classList.remove('show');
+    sessionStorage.setItem(STORAGE_KEY, '1');
+  });
 })();
 </script>
 </body>
