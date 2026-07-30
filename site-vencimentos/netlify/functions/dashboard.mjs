@@ -39,7 +39,15 @@ export default async (req, context) => {
   const items = [];
   for (const r of records) {
     let label, dateIso;
-    if (r.d60) {
+    // o vencimento de 30 dias sempre aparece primeiro, mesmo que o registro já
+    // tenha uma data de 60 dias calculada de antemão (o contrato só é
+    // prorrogado se o colaborador for aprovado nos 30 dias iniciais).
+    // Só passamos a mostrar os 60 dias depois que o marco de 30 dias já ficou
+    // para trás.
+    if (r.d30 && diffDays(r.d30, today) >= 0) {
+      label = "30 DIAS";
+      dateIso = r.d30;
+    } else if (r.d60) {
       label = "60 DIAS";
       dateIso = r.d60;
     } else if (r.d30) {
