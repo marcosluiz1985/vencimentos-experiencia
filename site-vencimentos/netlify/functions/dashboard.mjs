@@ -60,6 +60,7 @@ export default async (req, context) => {
     items.push({
       nome: r.nome,
       setor: r.setor || "",
+      admissao: r.contratacao || "",
       label,
       dateIso,
       delta,
@@ -85,9 +86,10 @@ export default async (req, context) => {
 
   const rowsHtml = items
     .map(
-      (a) => `<tr class="${rowClass(a.delta)}" data-delta="${a.delta}" data-date="${a.dateIso}">
+      (a) => `<tr class="${rowClass(a.delta)}" data-delta="${a.delta}" data-date="${a.dateIso}" data-admissao="${a.admissao}">
         <td>${escapeHtml(a.nome)}</td>
         <td>${escapeHtml(a.setor)}</td>
+        <td>${a.admissao ? fmtDate(a.admissao) : "-"}</td>
         <td>${a.label}</td>
         <td>${fmtDate(a.dateIso)}</td>
         <td>${escapeHtml(a.status)}</td>
@@ -205,6 +207,7 @@ export default async (req, context) => {
       <tr>
         <th data-key="nome" data-type="text">Nome <span class="arrow"></span></th>
         <th data-key="setor" data-type="text">Setor <span class="arrow"></span></th>
+        <th data-key="admissao" data-type="date">Data de Admissão <span class="arrow"></span></th>
         <th data-key="label" data-type="text">Etapa <span class="arrow"></span></th>
         <th data-key="date" data-type="date">Data <span class="arrow"></span></th>
         <th data-key="delta" data-type="delta">Status <span class="arrow"></span></th>
@@ -290,8 +293,8 @@ export default async (req, context) => {
 
   let currentSort = { key: null, dir: 1 };
 
-  function cellValue(tr, colIndex, type) {
-    if (type === 'date') return tr.getAttribute('data-date') || '';
+  function cellValue(tr, colIndex, type, key) {
+    if (type === 'date') return tr.getAttribute('data-' + key) || '';
     if (type === 'delta') return parseInt(tr.getAttribute('data-delta'), 10);
     return tr.children[colIndex].textContent.trim().toLowerCase();
   }
@@ -312,8 +315,8 @@ export default async (req, context) => {
 
       const rows = Array.from(tbody.querySelectorAll('tr'));
       rows.sort(function(a, b) {
-        const va = cellValue(a, colIndex, type);
-        const vb = cellValue(b, colIndex, type);
+        const va = cellValue(a, colIndex, type, key);
+        const vb = cellValue(b, colIndex, type, key);
         if (va < vb) return -1 * dir;
         if (va > vb) return 1 * dir;
         return 0;
