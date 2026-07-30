@@ -48,24 +48,46 @@ export default async (req, context) => {
   }
 
   const records = await getRecords();
-  const existingNames = new Set(records.map((r) => normName(r.nome)));
+  const byName = new Map(records.map((r) => [normName(r.nome), r]));
 
   let added = 0;
+  let updated = 0;
   let dup = 0;
   const addedNames = [];
+  const updatedNames = [];
   for (const rec of extracted) {
     const key = normName(rec.nome);
-    if (!key || existingNames.has(key)) {
+    if (!key) {
       dup++;
       continue;
     }
-    records.push(rec);
-    existingNames.add(key);
-    added++;
-    addedNames.push(rec.nome);
+    const existing = byName.get(key);
+    if (!existing) {
+      records.push(rec);
+      byName.set(key, rec);
+      added++;
+      addedNames.push(rec.nome);
+      continue;
+    }
+    // já existe um registro com esse nome. Se o cadastrado ficou sem data de
+    // 30/60 dias (ex.: de uma importação anterior que não reconheceu as
+    // colunas do arquivo) e o novo arquivo traz essas datas, completa o
+    // registro em vez de simplesmente ignorar como duplicado.
+    const existingHasDates = Boolean(existing.d30 || existing.d60);
+    const newHasDates = Boolean(rec.d30 || rec.d60);
+    if (!existingHasDates && newHasDates) {
+      existing.setor = existing.setor || rec.setor;
+      existing.contratacao = existing.contratacao || rec.contratacao;
+      existing.d30 = rec.d30 || existing.d30;
+      existing.d60 = rec.d60 || existing.d60;
+      updated++;
+      updatedNames.push(rec.nome);
+    } else {
+      dup++;
+    }
   }
 
-  if (added > 0) {
+  if (added > 0 || updated > 0) {
     await saveRecords(records);
   }
 
@@ -74,8 +96,10 @@ export default async (req, context) => {
     file: filename,
     totalNoArquivo: extracted.length,
     adicionados: added,
+    atualizados: updated,
     duplicados: dup,
     nomesAdicionados: addedNames,
+    nomesAtualizados: updatedNames,
   });
 };
 

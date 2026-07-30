@@ -100,8 +100,14 @@
       } else {
         let text = 'Arquivo "' + data.file + '" processado.\n';
         text += data.adicionados + ' novo(s) adicionado(s), ' + data.duplicados + ' já existiam (ignorados).';
+        if (data.atualizados) {
+          text += '\n' + data.atualizados + ' registro(s) existente(s) tiveram as datas de 30/60 dias completadas.';
+        }
         if (data.nomesAdicionados && data.nomesAdicionados.length) {
           text += '\n\nNovos: ' + data.nomesAdicionados.join(', ');
+        }
+        if (data.nomesAtualizados && data.nomesAtualizados.length) {
+          text += '\n\nAtualizados: ' + data.nomesAtualizados.join(', ');
         }
         msg.className = 'ok';
         msg.textContent = text;
