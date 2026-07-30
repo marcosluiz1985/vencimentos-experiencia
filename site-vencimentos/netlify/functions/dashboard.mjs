@@ -100,42 +100,42 @@ export default async (req, context) => {
     background:#000; color:#fff; display:flex; align-items:center;
     justify-content:space-between; padding: 14px 24px; flex-wrap: wrap; gap: 12px;
   }
-  .topbar-title { font-size: 18px; font-weight:600; }
-  .topbar-sub { font-size: 12px; color:#aaa; margin-top: 2px; }
+  .topbar-title { font-size: 24px; font-weight:600; }
+  .topbar-sub { font-size: 15px; color:#bbb; margin-top: 4px; }
   .topbar-logo-badge {
-    background:#fff; border-radius: 8px; padding: 6px 14px; display:flex; align-items:center;
+    background:#fff; border-radius: 8px; padding: 8px 18px; display:flex; align-items:center;
   }
-  .topbar-logo { height: 34px; width:auto; display:block; }
-  .topbar-right { display:flex; align-items:center; gap:12px; }
-  .topbar-time { font-size: 12px; color:#ccc; white-space:nowrap; }
+  .topbar-logo { height: 42px; width:auto; display:block; }
+  .topbar-right { display:flex; align-items:center; gap:14px; }
+  .topbar-time { font-size: 15px; color:#ddd; white-space:nowrap; }
   #refreshBtn {
-    padding: 8px 14px; background:#fff; color:#222; border:none; border-radius:6px;
-    font-size: 13px; cursor:pointer; white-space:nowrap;
+    padding: 10px 18px; background:#fff; color:#222; border:none; border-radius:6px;
+    font-size: 15px; cursor:pointer; white-space:nowrap;
   }
   #refreshBtn:hover { background:#e5e5e5; }
-  h1 { font-size: 20px; margin-bottom: 4px; }
-  .sub { color:#666; margin-bottom: 16px; font-size: 13px; }
-  .toolbar { display:flex; align-items:center; gap:10px; margin-bottom: 12px; flex-wrap: wrap; }
+  h1 { font-size: 26px; margin-bottom: 6px; }
+  .sub { color:#666; margin-bottom: 18px; font-size: 15px; }
+  .toolbar { display:flex; align-items:center; gap:10px; margin-bottom: 14px; flex-wrap: wrap; }
   #search {
-    flex: 1; max-width: 360px; padding: 8px 12px; font-size: 14px;
+    flex: 1; max-width: 360px; padding: 10px 14px; font-size: 16px;
     border: 1px solid #ccc; border-radius: 6px; background:#fff;
   }
-  #count { font-size: 12px; color:#666; }
+  #count { font-size: 14px; color:#666; }
   #toggleOverdue {
-    padding: 8px 14px; background:#fff; color:#333; border:1px solid #ccc;
-    border-radius: 6px; font-size: 13px; cursor:pointer; white-space:nowrap;
+    padding: 10px 16px; background:#fff; color:#333; border:1px solid #ccc;
+    border-radius: 6px; font-size: 15px; cursor:pointer; white-space:nowrap;
   }
   #toggleOverdue:hover { background:#f0f0f0; }
   #toggleOverdue.active { background:#2c2c2c; color:#fff; border-color:#2c2c2c; }
-  .tabs { display:flex; gap:4px; margin-bottom: 18px; border-bottom: 2px solid #e2e2e2; }
+  .tabs { display:flex; gap:4px; margin-bottom: 20px; border-bottom: 2px solid #e2e2e2; }
   .tab {
-    padding: 10px 18px; font-size: 14px; text-decoration:none; color:#666;
+    padding: 12px 20px; font-size: 16px; text-decoration:none; color:#666;
     border-bottom: 2px solid transparent; margin-bottom: -2px;
   }
   .tab:hover { color:#222; }
   .tab.active { color:#222; font-weight:600; border-bottom-color:#2c2c2c; }
   table { border-collapse: collapse; width: 100%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.1); }
-  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+  th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #eee; font-size: 16px; }
   th {
     background:#2c2c2c; color:#fff; position: sticky; top:0;
     cursor: pointer; user-select: none; white-space: nowrap;
@@ -147,7 +147,7 @@ export default async (req, context) => {
   tr.urgente { background:#fff3cd; }
   tr.ok { background:#fff; }
   tr.hidden { display:none; }
-  .legend { margin-top: 14px; font-size: 12px; color:#555; }
+  .legend { margin-top: 16px; font-size: 14px; color:#555; }
   .legend span { display:inline-block; width:12px; height:12px; margin-right:4px; vertical-align:middle; }
   #alertBanner {
     position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
@@ -158,12 +158,12 @@ export default async (req, context) => {
   #alertBanner.show { display:block; }
   #alertBanner .row { display:flex; align-items:flex-start; gap:10px; margin-bottom: 8px; }
   #alertBanner .row:last-of-type { margin-bottom: 0; }
-  #alertBanner .icon { font-size: 16px; line-height: 1.4; }
-  #alertBanner .txt { font-size: 13px; line-height: 1.4; }
+  #alertBanner .icon { font-size: 18px; line-height: 1.4; }
+  #alertBanner .txt { font-size: 15px; line-height: 1.4; }
   #alertBanner .txt b { font-weight:600; }
   #alertBanner .close {
     position:absolute; top:8px; right:10px; background:none; border:none; color:#aaa;
-    font-size: 16px; cursor:pointer; line-height:1;
+    font-size: 18px; cursor:pointer; line-height:1;
   }
   #alertBanner .close:hover { color:#fff; }
 </style>
