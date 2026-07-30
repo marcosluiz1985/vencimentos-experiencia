@@ -94,7 +94,22 @@ export default async (req, context) => {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vencimentos de Experiência</title>
 <style>
-  body { font-family: -apple-system, Arial, sans-serif; margin: 24px; background:#f7f7f8; color:#222; }
+  body { font-family: -apple-system, Arial, sans-serif; margin: 0; background:#f7f7f8; color:#222; }
+  .container { padding: 24px; }
+  .topbar {
+    background:#000; color:#fff; display:flex; align-items:center;
+    justify-content:space-between; padding: 14px 24px; flex-wrap: wrap; gap: 12px;
+  }
+  .topbar-title { font-size: 18px; font-weight:600; }
+  .topbar-sub { font-size: 12px; color:#aaa; margin-top: 2px; }
+  .topbar-logo { height: 42px; width:auto; filter: brightness(0) invert(1); display:block; }
+  .topbar-right { display:flex; align-items:center; gap:12px; }
+  .topbar-time { font-size: 12px; color:#ccc; white-space:nowrap; }
+  #refreshBtn {
+    padding: 8px 14px; background:#fff; color:#222; border:none; border-radius:6px;
+    font-size: 13px; cursor:pointer; white-space:nowrap;
+  }
+  #refreshBtn:hover { background:#e5e5e5; }
   h1 { font-size: 20px; margin-bottom: 4px; }
   .sub { color:#666; margin-bottom: 16px; font-size: 13px; }
   .toolbar { display:flex; align-items:center; gap:10px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -151,6 +166,18 @@ export default async (req, context) => {
 </style>
 </head>
 <body>
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Vencimentos de Experiência</div>
+      <div class="topbar-sub">Contrato de experiência — 30/60 dias</div>
+    </div>
+    <img src="/logo.png" alt="Mavaular Móveis" class="topbar-logo">
+    <div class="topbar-right">
+      <span class="topbar-time" id="topbarTime">Atualizado às -- (${items.length} registros)</span>
+      <button id="refreshBtn" type="button">&#8635; Atualizar</button>
+    </div>
+  </div>
+  <div class="container">
   <div class="tabs">
     <a class="tab active" href="/">Visualizar</a>
     <a class="tab" href="/upload.html">Adicionar dados</a>
@@ -186,9 +213,23 @@ export default async (req, context) => {
     <button class="close" type="button" aria-label="Fechar">&times;</button>
     <div id="alertContent"></div>
   </div>
+  </div>
 
 <script>
 (function() {
+  const refreshBtn = document.getElementById('refreshBtn');
+  const topbarTime = document.getElementById('topbarTime');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', function() { location.reload(); });
+  }
+  if (topbarTime) {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    topbarTime.textContent = topbarTime.textContent.replace('--', hh + ':' + mm + ':' + ss);
+  }
+
   const table = document.getElementById('tbl');
   const tbody = table.querySelector('tbody');
   const searchInput = document.getElementById('search');
