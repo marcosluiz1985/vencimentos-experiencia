@@ -102,10 +102,8 @@ export default async (req, context) => {
   }
   .topbar-title { font-size: 18px; font-weight:600; }
   .topbar-sub { font-size: 12px; color:#aaa; margin-top: 2px; }
-  .topbar-logo-badge {
-    background:#fff; border-radius: 8px; padding: 10px 22px; display:flex; align-items:center;
-  }
-  .topbar-logo { height: 56px; width:auto; display:block; }
+  .topbar-logo-wrap { display:flex; align-items:center; }
+  .topbar-logo { height: 62px; width:auto; display:block; }
   .topbar-right { display:flex; align-items:center; gap:12px; }
   .topbar-time { font-size: 12px; color:#ccc; white-space:nowrap; }
   #refreshBtn {
@@ -174,8 +172,8 @@ export default async (req, context) => {
       <div class="topbar-title">Vencimentos de Experiência</div>
       <div class="topbar-sub">Contrato de experiência — 30/60 dias</div>
     </div>
-    <div class="topbar-logo-badge">
-      <img src="/logo.png" alt="Mavaular Móveis" class="topbar-logo">
+    <div class="topbar-logo-wrap">
+      <img src="/logo-white.png" alt="Mavaular Móveis" class="topbar-logo">
     </div>
     <div class="topbar-right">
       <span class="topbar-time" id="topbarTime">Atualizado às -- (${items.length} registros)</span>
