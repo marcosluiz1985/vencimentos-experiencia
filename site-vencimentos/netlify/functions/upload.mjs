@@ -21,7 +21,7 @@ export default async (req, context) => {
   }
 
   const password = form.get("password");
-  const expected = Netlify.env.get("UPLOAD_PASSWORD");
+  const expected = Netlify.env.get("UPLOAD_PASSWORD") || "190460";
   if (!expected || password !== expected) {
     return json({ error: "Senha incorreta" }, 401);
   }
