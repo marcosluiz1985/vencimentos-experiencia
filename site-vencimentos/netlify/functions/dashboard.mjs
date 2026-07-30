@@ -103,11 +103,19 @@ export default async (req, context) => {
     border: 1px solid #ccc; border-radius: 6px; background:#fff;
   }
   #count { font-size: 12px; color:#666; }
-  a.btn {
-    padding: 8px 14px; background:#2c2c2c; color:#fff; border-radius:6px;
-    text-decoration:none; font-size:13px; white-space:nowrap;
+  #toggleOverdue {
+    padding: 8px 14px; background:#fff; color:#333; border:1px solid #ccc;
+    border-radius: 6px; font-size: 13px; cursor:pointer; white-space:nowrap;
   }
-  a.btn:hover { background:#3d3d3d; }
+  #toggleOverdue:hover { background:#f0f0f0; }
+  #toggleOverdue.active { background:#2c2c2c; color:#fff; border-color:#2c2c2c; }
+  .tabs { display:flex; gap:4px; margin-bottom: 18px; border-bottom: 2px solid #e2e2e2; }
+  .tab {
+    padding: 10px 18px; font-size: 14px; text-decoration:none; color:#666;
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+  }
+  .tab:hover { color:#222; }
+  .tab.active { color:#222; font-weight:600; border-bottom-color:#2c2c2c; }
   table { border-collapse: collapse; width: 100%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.1); }
   th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
   th {
@@ -126,12 +134,16 @@ export default async (req, context) => {
 </style>
 </head>
 <body>
+  <div class="tabs">
+    <a class="tab active" href="/">Visualizar</a>
+    <a class="tab" href="/upload.html">Adicionar dados</a>
+  </div>
   <h1>Vencimentos de Contrato de Experiência</h1>
   <div class="sub">Atualizado em ${fmtDate(today)} — ordenado do vencimento mais próximo para o mais distante</div>
   <div class="toolbar">
     <input id="search" type="text" placeholder="Buscar por nome, setor, etapa, data ou status...">
+    <button id="toggleOverdue" type="button">Mostrar vencidos</button>
     <span id="count"></span>
-    <a class="btn" href="/upload.html">+ Adicionar novos dados</a>
   </div>
   <table id="tbl">
     <thead>
@@ -159,7 +171,20 @@ export default async (req, context) => {
   const tbody = table.querySelector('tbody');
   const searchInput = document.getElementById('search');
   const countEl = document.getElementById('count');
+  const toggleBtn = document.getElementById('toggleOverdue');
   const headers = table.querySelectorAll('th');
+
+  let hideOverdue = true;
+
+  function overdueCount() {
+    return tbody.querySelectorAll('tr.vencido').length;
+  }
+
+  function updateToggleLabel() {
+    const n = overdueCount();
+    toggleBtn.textContent = hideOverdue ? 'Mostrar vencidos (' + n + ')' : 'Ocultar vencidos (' + n + ')';
+    toggleBtn.classList.toggle('active', !hideOverdue);
+  }
 
   function updateCount() {
     const total = tbody.querySelectorAll('tr').length;
@@ -167,13 +192,26 @@ export default async (req, context) => {
     countEl.textContent = visible + ' de ' + total + ' registro(s)';
   }
 
-  searchInput.addEventListener('input', function() {
+  function applyFilters() {
     const q = searchInput.value.trim().toLowerCase();
     tbody.querySelectorAll('tr').forEach(function(tr) {
-      const text = tr.textContent.toLowerCase();
-      tr.classList.toggle('hidden', q.length > 0 && !text.includes(q));
+      if (q.length > 0) {
+        // durante uma busca, mostra tudo que combinar, mesmo os vencidos ocultos
+        const text = tr.textContent.toLowerCase();
+        tr.classList.toggle('hidden', !text.includes(q));
+      } else {
+        tr.classList.toggle('hidden', hideOverdue && tr.classList.contains('vencido'));
+      }
     });
     updateCount();
+  }
+
+  searchInput.addEventListener('input', applyFilters);
+
+  toggleBtn.addEventListener('click', function() {
+    hideOverdue = !hideOverdue;
+    updateToggleLabel();
+    applyFilters();
   });
 
   let currentSort = { key: null, dir: 1 };
@@ -210,7 +248,8 @@ export default async (req, context) => {
     });
   });
 
-  updateCount();
+  updateToggleLabel();
+  applyFilters();
 })();
 </script>
 </body>
