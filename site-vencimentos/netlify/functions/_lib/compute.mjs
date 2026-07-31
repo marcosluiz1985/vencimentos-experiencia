@@ -24,6 +24,25 @@ export function fmtDate(iso) {
   return `${d}/${m}/${y}`;
 }
 
+function addDays(iso, days) {
+  if (!iso) return null;
+  const dt = new Date(iso + "T00:00:00Z");
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
+// Alguns registros mais antigos (da planilha original) nunca tiveram a data de
+// 60 dias calculada, porque na época o funcionário ainda nem tinha passado
+// dos 30 dias. Se precisarmos mostrar a etapa de 60 dias e ela não existir,
+// calculamos a partir da admissão (ou da data de 30 dias) em vez de deixar a
+// pessoa "presa" na etapa de 30 dias mesmo depois de decidido que continua.
+function resolveD60(r) {
+  if (r.d60) return r.d60;
+  if (r.contratacao) return addDays(r.contratacao, 60);
+  if (r.d30) return addDays(r.d30, 30);
+  return null;
+}
+
 // Retorna, para cada registro, o estado atual: concluído (com o resultado) ou
 // pendente (etapa 30 ou 60, com a data de referência e quantos dias faltam).
 export function computeItems(records, todayIso) {
@@ -39,16 +58,23 @@ export function computeItems(records, todayIso) {
         statusText = "Demitido nos 30 dias";
       } else if (r.decisao60 === "efetivado") {
         etapa = "EFETIVADO";
-        dateIso = r.decisao60Data || r.d60;
+        dateIso = r.decisao60Data || resolveD60(r);
         statusText = "Efetivado";
       } else {
         etapa = "ENCERRADO";
-        dateIso = r.decisao60Data || r.d60;
+        dateIso = r.decisao60Data || resolveD60(r);
         statusText = "Demitido nos 60 dias";
       }
-    } else if (r.decisao30 === "continua" && r.d60) {
-      etapa = "60 DIAS";
-      dateIso = r.d60;
+    } else if (r.decisao30 === "continua") {
+      // já decidido que continua: mostra a etapa de 60 dias mesmo que essa
+      // data nunca tenha sido calculada no registro original.
+      const d60 = resolveD60(r);
+      if (d60) {
+        etapa = "60 DIAS";
+        dateIso = d60;
+      } else {
+        continue;
+      }
     } else if (r.d30 && diffDays(r.d30, todayIso) >= 0) {
       etapa = "30 DIAS";
       dateIso = r.d30;
