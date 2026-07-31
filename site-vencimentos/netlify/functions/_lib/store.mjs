@@ -17,7 +17,10 @@ export function normName(s) {
 }
 
 function store() {
-  return getStore(STORE_NAME);
+  // "strong" evita ler uma cópia antiga logo depois de salvar (o padrão do
+  // Netlify Blobs é consistência eventual, então sem isso uma decisão
+  // registrada podia "voltar" ao recarregar a página em seguida).
+  return getStore({ name: STORE_NAME, consistency: "strong" });
 }
 
 export async function getRecords() {
