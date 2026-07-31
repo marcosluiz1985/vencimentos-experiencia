@@ -23,7 +23,7 @@ export default async (req, context) => {
   }
 
   const key = normName(nomeQuery);
-  const matches = records.filter((r) => normName(r.nome) === key);
+  const matches = records.filter((r) => normName(r.nome).includes(key));
   return json({ query: nomeQuery, matches: matches.length, records: matches });
 };
 
