@@ -1,23 +1,7 @@
 import { getRecords } from "./_lib/store.mjs";
+import { todayISO, computeItems, sortByUrgency } from "./_lib/compute.mjs";
 
 const LEAD_DAYS = 5;
-const OVERDUE_GRACE = 3;
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function diffDays(isoDate, todayIso) {
-  const a = new Date(isoDate + "T00:00:00Z");
-  const b = new Date(todayIso + "T00:00:00Z");
-  return Math.round((a - b) / 86400000);
-}
-
-function classify(delta) {
-  if (delta < 0) return `VENCIDO há ${-delta} dia(s)`;
-  if (delta === 0) return "VENCE HOJE";
-  return `vence em ${delta} dia(s)`;
-}
 
 function escapeHtml(s) {
   return String(s)
@@ -36,62 +20,25 @@ export default async (req, context) => {
   const records = await getRecords();
   const today = todayISO();
 
-  const items = [];
-  for (const r of records) {
-    let label, dateIso;
-    // o vencimento de 30 dias sempre aparece primeiro, mesmo que o registro já
-    // tenha uma data de 60 dias calculada de antemão (o contrato só é
-    // prorrogado se o colaborador for aprovado nos 30 dias iniciais).
-    // Só passamos a mostrar os 60 dias depois que o marco de 30 dias já ficou
-    // para trás.
-    if (r.d30 && diffDays(r.d30, today) >= 0) {
-      label = "30 DIAS";
-      dateIso = r.d30;
-    } else if (r.d60) {
-      label = "60 DIAS";
-      dateIso = r.d60;
-    } else if (r.d30) {
-      label = "30 DIAS";
-      dateIso = r.d30;
-    } else {
-      continue;
-    }
-    const delta = diffDays(dateIso, today);
-    items.push({
-      nome: r.nome,
-      setor: r.setor || "",
-      admissao: r.contratacao || "",
-      label,
-      dateIso,
-      delta,
-      status: classify(delta),
-    });
-  }
+  const items = sortByUrgency(computeItems(records, today));
 
-  // mais próximos de hoje primeiro; empate: o que ainda vai vencer antes do que já venceu
-  items.sort((a, b) => {
-    const da = Math.abs(a.delta);
-    const db = Math.abs(b.delta);
-    if (da !== db) return da - db;
-    const sa = a.delta >= 0 ? 0 : 1;
-    const sb = b.delta >= 0 ? 0 : 1;
-    return sa - sb;
-  });
-
-  function rowClass(delta) {
-    if (delta < 0) return "vencido";
-    if (delta <= LEAD_DAYS) return "urgente";
+  function rowClass(item) {
+    if (item.concluido) return "concluido";
+    if (item.delta < 0) return "vencido";
+    if (item.delta <= LEAD_DAYS) return "urgente";
     return "ok";
   }
 
+  const activeCount = items.filter((a) => !a.concluido).length;
+
   const rowsHtml = items
     .map(
-      (a) => `<tr class="${rowClass(a.delta)}" data-delta="${a.delta}" data-date="${a.dateIso}" data-admissao="${a.admissao}">
+      (a) => `<tr class="${rowClass(a)}" data-delta="${a.delta}" data-date="${a.dateIso}" data-admissao="${a.admissao}">
         <td>${escapeHtml(a.nome)}</td>
         <td>${escapeHtml(a.setor)}</td>
         <td>${a.admissao ? fmtDate(a.admissao) : "-"}</td>
-        <td>${a.label}</td>
-        <td>${fmtDate(a.dateIso)}</td>
+        <td>${a.etapa}</td>
+        <td>${a.dateIso ? fmtDate(a.dateIso) : "-"}</td>
         <td>${escapeHtml(a.status)}</td>
       </tr>`
     )
@@ -154,6 +101,7 @@ export default async (req, context) => {
   tr.vencido { background:#fde2e2; }
   tr.urgente { background:#fff3cd; }
   tr.ok { background:#fff; }
+  tr.concluido { background:#eee; color:#777; }
   tr.hidden { display:none; }
   .legend { margin-top: 14px; font-size: 12px; color:#555; }
   .legend span { display:inline-block; width:12px; height:12px; margin-right:4px; vertical-align:middle; }
@@ -186,13 +134,15 @@ export default async (req, context) => {
       <img src="/logo-white.png" alt="Mavaular Móveis" class="topbar-logo">
     </div>
     <div class="topbar-right">
-      <span class="topbar-time" id="topbarTime">Atualizado às -- (${items.length} registros)</span>
+      <span class="topbar-time" id="topbarTime">Atualizado às -- (${activeCount} registros)</span>
       <button id="refreshBtn" type="button">&#8635; Atualizar</button>
     </div>
   </div>
   <div class="container">
   <div class="tabs">
     <a class="tab active" href="/">Visualizar</a>
+    <a class="tab" href="/gerenciar.html">Gerenciar</a>
+    <a class="tab" href="/historico.html">Histórico</a>
     <a class="tab" href="/upload.html">Adicionar dados</a>
   </div>
   <h1>Vencimentos de Contrato de Experiência</h1>
@@ -220,7 +170,8 @@ export default async (req, context) => {
   <div class="legend">
     <span style="background:#fde2e2;"></span> vencido &nbsp;
     <span style="background:#fff3cd;"></span> vence em até ${LEAD_DAYS} dias &nbsp;
-    <span style="background:#fff;border:1px solid #ddd;"></span> ok
+    <span style="background:#fff;border:1px solid #ddd;"></span> ok &nbsp;
+    <span style="background:#eee;border:1px solid #ddd;"></span> concluído (efetivado/demitido, oculto — pesquise o nome para ver)
   </div>
 
   <div id="alertBanner">
@@ -273,9 +224,14 @@ export default async (req, context) => {
     const q = searchInput.value.trim().toLowerCase();
     tbody.querySelectorAll('tr').forEach(function(tr) {
       if (q.length > 0) {
-        // durante uma busca, mostra tudo que combinar, mesmo os vencidos ocultos
+        // durante uma busca, mostra tudo que combinar, mesmo vencidos e
+        // concluídos ocultos por padrão
         const text = tr.textContent.toLowerCase();
         tr.classList.toggle('hidden', !text.includes(q));
+      } else if (tr.classList.contains('concluido')) {
+        // concluídos (efetivados/demitidos) sempre ficam ocultos por padrão;
+        // só aparecem pesquisando o nome
+        tr.classList.add('hidden');
       } else {
         tr.classList.toggle('hidden', hideOverdue && tr.classList.contains('vencido'));
       }
@@ -333,7 +289,7 @@ export default async (req, context) => {
   const bannerContent = document.getElementById('alertContent');
   const bannerClose = banner.querySelector('.close');
 
-  const allRows = Array.from(tbody.querySelectorAll('tr'));
+  const allRows = Array.from(tbody.querySelectorAll('tr')).filter(function(tr) { return !tr.classList.contains('concluido'); });
   const nomeOf = function(tr) { return tr.children[0].textContent.trim(); };
   const setorOf = function(tr) { return tr.children[1].textContent.trim(); };
 

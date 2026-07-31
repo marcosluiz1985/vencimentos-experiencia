@@ -17,7 +17,7 @@
   .topbar-sub { font-size: 12px; color:#aaa; margin-top: 2px; }
   .topbar-logo-wrap { display:flex; align-items:center; }
   .topbar-logo { height: 62px; width:auto; display:block; }
-  .tabs { display:flex; gap:4px; margin-bottom: 18px; border-bottom: 2px solid #e2e2e2; max-width: 420px; }
+  .tabs { display:flex; gap:4px; margin-bottom: 18px; border-bottom: 2px solid #e2e2e2; flex-wrap: wrap; }
   .tab {
     padding: 10px 18px; font-size: 14px; text-decoration:none; color:#666;
     border-bottom: 2px solid transparent; margin-bottom: -2px;
@@ -60,6 +60,8 @@
   <div class="container">
   <div class="tabs">
     <a class="tab" href="/">Visualizar</a>
+    <a class="tab" href="/gerenciar.html">Gerenciar</a>
+    <a class="tab" href="/historico.html">Histórico</a>
     <a class="tab active" href="/upload.html">Adicionar dados</a>
   </div>
   <div class="card">

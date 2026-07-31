@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerenciar decisões — Vencimentos de Experiência</title>
+<style>
+  body {
+    font-family: -apple-system, Arial, sans-serif; margin: 0; background:#f7f7f8; color:#222;
+  }
+  .container { padding: 24px; }
+  .topbar {
+    background:#000; color:#fff; display:flex; align-items:center;
+    justify-content:space-between; padding: 14px 24px; flex-wrap: wrap; gap: 12px;
+  }
+  .topbar-title { font-size: 18px; font-weight:600; }
+  .topbar-sub { font-size: 12px; color:#aaa; margin-top: 2px; }
+  .topbar-logo-wrap { display:flex; align-items:center; }
+  .topbar-logo { height: 62px; width:auto; display:block; }
+  .tabs { display:flex; gap:4px; margin-bottom: 18px; border-bottom: 2px solid #e2e2e2; }
+  .tab {
+    padding: 10px 18px; font-size: 14px; text-decoration:none; color:#666;
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+  }
+  .tab:hover { color:#222; }
+  .tab.active { color:#222; font-weight:600; border-bottom-color:#2c2c2c; }
+  h1 { font-size: 18px; margin: 0 0 6px; }
+  .sub { font-size: 13px; color:#666; margin-bottom: 20px; }
+  .login-card {
+    background:#fff; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,.12);
+    padding: 28px; width: 100%; max-width: 380px; box-sizing: border-box;
+  }
+  label { display:block; font-size: 13px; margin-bottom: 6px; color:#333; }
+  input[type=password] {
+    width: 100%; box-sizing: border-box; padding: 9px 10px; margin-bottom: 16px;
+    border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
+  }
+  button {
+    padding: 9px 16px; background:#2c2c2c; color:#fff; border:none;
+    border-radius: 6px; font-size: 14px; cursor:pointer;
+  }
+  button:hover { background:#3d3d3d; }
+  button:disabled { opacity:.6; cursor:default; }
+  button.secondary { background:#fff; color:#333; border:1px solid #ccc; }
+  button.secondary:hover { background:#f0f0f0; }
+  #msg { margin-top: 14px; font-size: 13px; white-space: pre-line; }
+  #msg.ok { color:#1a7a1a; }
+  #msg.err { color:#b3261e; }
+  #loginArea { display:flex; }
+  #panel { display:none; }
+  table { border-collapse: collapse; width: 100%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.1); margin-top: 12px; }
+  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+  th { background:#2c2c2c; color:#fff; white-space: nowrap; }
+  tr.vencido30 { background:#fde2e2; }
+  tr.vencido60 { background:#fde2e2; }
+  .actions { display:flex; gap:6px; flex-wrap: wrap; }
+  .actions button { font-size: 12px; padding: 6px 10px; white-space: nowrap; }
+  .btn-continua, .btn-efetivado { background:#1a7a1a; }
+  .btn-continua:hover, .btn-efetivado:hover { background:#20a020; }
+  .btn-demitido { background:#b3261e; }
+  .btn-demitido:hover { background:#d13a30; }
+  .row-msg { font-size: 12px; margin-top: 4px; }
+  .empty { padding: 24px; text-align:center; color:#888; font-size: 14px; }
+  #topToolbar { display:flex; align-items:center; gap:10px; margin-bottom: 12px; flex-wrap: wrap; }
+  #search {
+    flex: 1; max-width: 360px; padding: 8px 12px; font-size: 14px;
+    border: 1px solid #ccc; border-radius: 6px; background:#fff;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Vencimentos de Experiência</div>
+      <div class="topbar-sub">Gerenciar decisões — 30/60 dias</div>
+    </div>
+    <div class="topbar-logo-wrap">
+      <img src="/logo-white.png" alt="Mavaular Móveis" class="topbar-logo">
+    </div>
+    <div></div>
+  </div>
+  <div class="container">
+  <div class="tabs">
+    <a class="tab" href="/">Visualizar</a>
+    <a class="tab active" href="/gerenciar.html">Gerenciar</a>
+    <a class="tab" href="/historico.html">Histórico</a>
+    <a class="tab" href="/upload.html">Adicionar dados</a>
+  </div>
+
+  <div id="loginArea">
+    <div class="login-card">
+      <h1>Gerenciar decisões</h1>
+      <div class="sub">Registre se o colaborador continua nos 30 dias, foi efetivado ou demitido.</div>
+      <label for="password">Senha</label>
+      <input type="password" id="password" autocomplete="current-password">
+      <button id="loadBtn" type="button">Carregar pendências</button>
+      <div id="msg"></div>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div id="topToolbar">
+      <input id="search" type="text" placeholder="Buscar por nome ou setor...">
+      <button class="secondary" id="reloadBtn" type="button">↻ Recarregar</button>
+    </div>
+    <div id="tableWrap"></div>
+  </div>
+  </div>
+
+<script>
+(function() {
+  const loginArea = document.getElementById('loginArea');
+  const panel = document.getElementById('panel');
+  const passwordInput = document.getElementById('password');
+  const loadBtn = document.getElementById('loadBtn');
+  const reloadBtn = document.getElementById('reloadBtn');
+  const msg = document.getElementById('msg');
+  const tableWrap = document.getElementById('tableWrap');
+  const searchInput = document.getElementById('search');
+
+  let password = '';
+  let items = [];
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function render() {
+    if (!items.length) {
+      tableWrap.innerHTML = '<div class="empty">Nenhuma pendência no momento. Todo mundo já foi decidido ou ainda não chegou no marco.</div>';
+      return;
+    }
+    const rows = items.map(function(it, idx) {
+      const rowClass = it.delta < 0 ? (it.etapaNum === 60 ? 'vencido60' : 'vencido30') : '';
+      let actions;
+      if (it.etapaNum === 30) {
+        actions = '<button class="btn-continua" data-idx="' + idx + '" data-etapa="30" data-decisao="continua">Continua (60 dias)</button>' +
+                  '<button class="btn-demitido" data-idx="' + idx + '" data-etapa="30" data-decisao="demitido">Demitido</button>';
+      } else {
+        actions = '<button class="btn-efetivado" data-idx="' + idx + '" data-etapa="60" data-decisao="efetivado">Efetivado</button>' +
+                  '<button class="btn-demitido" data-idx="' + idx + '" data-etapa="60" data-decisao="demitido">Demitido</button>';
+      }
+      return '<tr class="' + rowClass + '" data-nome="' + escapeHtml(it.nome.toLowerCase()) + '" data-setor="' + escapeHtml((it.setor || '').toLowerCase()) + '">' +
+        '<td>' + escapeHtml(it.nome) + '</td>' +
+        '<td>' + escapeHtml(it.setor || '') + '</td>' +
+        '<td>' + escapeHtml(it.admissao) + '</td>' +
+        '<td>' + escapeHtml(it.etapa) + '</td>' +
+        '<td>' + escapeHtml(it.data) + '</td>' +
+        '<td>' + escapeHtml(it.status) + '</td>' +
+        '<td><div class="actions">' + actions + '</div><div class="row-msg" id="rowmsg-' + idx + '"></div></td>' +
+        '</tr>';
+    }).join('');
+
+    tableWrap.innerHTML = '<table id="tbl"><thead><tr>' +
+      '<th>Nome</th><th>Setor</th><th>Data de Admissão</th><th>Etapa</th><th>Data</th><th>Status</th><th>Ação</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+    tableWrap.querySelectorAll('button[data-idx]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const idx = parseInt(btn.getAttribute('data-idx'), 10);
+        const etapa = btn.getAttribute('data-etapa');
+        const decisao = btn.getAttribute('data-decisao');
+        registrarDecisao(idx, etapa, decisao);
+      });
+    });
+
+    applySearch();
+  }
+
+  function applySearch() {
+    const q = searchInput.value.trim().toLowerCase();
+    document.querySelectorAll('#tbl tbody tr').forEach(function(tr) {
+      const text = tr.textContent.toLowerCase();
+      tr.style.display = (q.length > 0 && !text.includes(q)) ? 'none' : '';
+    });
+  }
+
+  searchInput.addEventListener('input', applySearch);
+
+  async function registrarDecisao(idx, etapa, decisao) {
+    const item = items[idx];
+    const rowMsg = document.getElementById('rowmsg-' + idx);
+    const buttons = tableWrap.querySelectorAll('button[data-idx="' + idx + '"]');
+    buttons.forEach(function(b) { b.disabled = true; });
+    rowMsg.textContent = 'Salvando...';
+    try {
+      const fd = new FormData();
+      fd.append('password', password);
+      fd.append('nome', item.nome);
+      fd.append('etapa', etapa);
+      fd.append('decisao', decisao);
+      const res = await fetch('/api/decidir', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        rowMsg.style.color = '#b3261e';
+        rowMsg.textContent = data.error || 'Erro ao salvar';
+        buttons.forEach(function(b) { b.disabled = false; });
+        return;
+      }
+      rowMsg.style.color = '#1a7a1a';
+      rowMsg.textContent = 'Registrado!';
+      items.splice(idx, 1);
+      setTimeout(render, 400);
+    } catch (err) {
+      rowMsg.style.color = '#b3261e';
+      rowMsg.textContent = 'Falha de conexão: ' + err.message;
+      buttons.forEach(function(b) { b.disabled = false; });
+    }
+  }
+
+  async function carregar() {
+    msg.className = '';
+    msg.textContent = '';
+    loadBtn.disabled = true;
+    loadBtn.textContent = 'Carregando...';
+    try {
+      const fd = new FormData();
+      fd.append('password', passwordInput.value);
+      const res = await fetch('/api/pendentes', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        msg.className = 'err';
+        msg.textContent = data.error || 'Erro ao carregar';
+        return;
+      }
+      password = passwordInput.value;
+      items = data.items;
+      loginArea.style.display = 'none';
+      panel.style.display = 'block';
+      render();
+    } catch (err) {
+      msg.className = 'err';
+      msg.textContent = 'Falha de conexão: ' + err.message;
+    } finally {
+      loadBtn.disabled = false;
+      loadBtn.textContent = 'Carregar pendências';
+    }
+  }
+
+  loadBtn.addEventListener('click', carregar);
+  passwordInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') carregar();
+  });
+
+  reloadBtn.addEventListener('click', async function() {
+    reloadBtn.disabled = true;
+    try {
+      const fd = new FormData();
+      fd.append('password', password);
+      const res = await fetch('/api/pendentes', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (res.ok) {
+        items = data.items;
+        render();
+      }
+    } finally {
+      reloadBtn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
