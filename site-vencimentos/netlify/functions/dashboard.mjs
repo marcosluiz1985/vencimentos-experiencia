@@ -293,19 +293,26 @@ export default async (req, context) => {
   const nomeOf = function(tr) { return tr.children[0].textContent.trim(); };
   const setorOf = function(tr) { return tr.children[1].textContent.trim(); };
 
+  const vencidoRows = allRows.filter(function(tr) { return parseInt(tr.getAttribute('data-delta'), 10) < 0; });
   const hojeRows = allRows.filter(function(tr) { return parseInt(tr.getAttribute('data-delta'), 10) === 0; });
-  const cincoDiasRows = allRows.filter(function(tr) { return parseInt(tr.getAttribute('data-delta'), 10) === 5; });
+  const urgenteRows = allRows.filter(function(tr) {
+    const d = parseInt(tr.getAttribute('data-delta'), 10);
+    return d > 0 && d <= ${LEAD_DAYS};
+  });
 
   function listNames(rows) {
     return rows.map(function(tr) { return nomeOf(tr) + ' (' + setorOf(tr) + ')'; }).join(', ');
   }
 
   let bannerHtml = '';
+  if (vencidoRows.length) {
+    bannerHtml += '<div class="row"><span class="icon">🔴</span><span class="txt"><b>Vencidos (' + vencidoRows.length + '):</b> ' + listNames(vencidoRows) + '</span></div>';
+  }
   if (hojeRows.length) {
     bannerHtml += '<div class="row"><span class="icon">⚠️</span><span class="txt"><b>Vence hoje (' + hojeRows.length + '):</b> ' + listNames(hojeRows) + '</span></div>';
   }
-  if (cincoDiasRows.length) {
-    bannerHtml += '<div class="row"><span class="icon">⏳</span><span class="txt"><b>Faltam 5 dias (' + cincoDiasRows.length + '):</b> ' + listNames(cincoDiasRows) + '</span></div>';
+  if (urgenteRows.length) {
+    bannerHtml += '<div class="row"><span class="icon">⏳</span><span class="txt"><b>Vence em até ${LEAD_DAYS} dias (' + urgenteRows.length + '):</b> ' + listNames(urgenteRows) + '</span></div>';
   }
 
   const STORAGE_KEY = 'vencimentos_banner_dismissed_' + '${today}';
