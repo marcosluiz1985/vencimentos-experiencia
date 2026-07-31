@@ -171,7 +171,7 @@ export default async (req, context) => {
     <span style="background:#fde2e2;"></span> vencido &nbsp;
     <span style="background:#fff3cd;"></span> vence em até ${LEAD_DAYS} dias &nbsp;
     <span style="background:#fff;border:1px solid #ddd;"></span> ok &nbsp;
-    <span style="background:#eee;border:1px solid #ddd;"></span> concluído (efetivado/demitido, oculto — pesquise o nome para ver)
+    <span style="background:#eee;border:1px solid #ddd;"></span> concluído (efetivado/demitido, oculto — pesquise o nome ou clique em "Mostrar vencidos" para ver)
   </div>
 
   <div id="alertBanner">
@@ -205,7 +205,7 @@ export default async (req, context) => {
   let hideOverdue = true;
 
   function overdueCount() {
-    return tbody.querySelectorAll('tr.vencido').length;
+    return tbody.querySelectorAll('tr.vencido, tr.concluido').length;
   }
 
   function updateToggleLabel() {
@@ -228,12 +228,12 @@ export default async (req, context) => {
         // concluídos ocultos por padrão
         const text = tr.textContent.toLowerCase();
         tr.classList.toggle('hidden', !text.includes(q));
-      } else if (tr.classList.contains('concluido')) {
-        // concluídos (efetivados/demitidos) sempre ficam ocultos por padrão;
-        // só aparecem pesquisando o nome
-        tr.classList.add('hidden');
       } else {
-        tr.classList.toggle('hidden', hideOverdue && tr.classList.contains('vencido'));
+        // "Mostrar vencidos" também revela os concluídos (efetivados/
+        // demitidos) — sem o botão ligado, os dois ficam ocultos por padrão;
+        // com ele ligado, aparecem todos, sem exceção.
+        const isVencidoOuConcluido = tr.classList.contains('vencido') || tr.classList.contains('concluido');
+        tr.classList.toggle('hidden', hideOverdue && isVencidoOuConcluido);
       }
     });
     updateCount();
