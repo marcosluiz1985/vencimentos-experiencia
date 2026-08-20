@@ -13,7 +13,10 @@ export function diffDays(isoDate, todayIso) {
 }
 
 export function classify(delta) {
-  if (delta < 0) return `VENCIDO há ${-delta} dia(s)`;
+  // Vencido sem decisão registrada: fica marcado como "AÇÃO PENDENTE"
+  // indefinidamente (não some sozinho depois de alguns dias) — só sai
+  // desse estado quando alguém decide efetivar ou desligar em /gerenciar.html.
+  if (delta < 0) return `VENCIDO há ${-delta} dia(s) — AÇÃO PENDENTE`;
   if (delta === 0) return "VENCE HOJE";
   return `vence em ${delta} dia(s)`;
 }
@@ -31,6 +34,18 @@ function addDays(iso, days) {
   return dt.toISOString().slice(0, 10);
 }
 
+// Vencimentos calculados automaticamente não devem cair em sábado ou domingo
+// (dias em que os colaboradores não trabalham) — antecipa para a sexta-feira
+// anterior nesse caso.
+function toPreviousFridayIfWeekend(iso) {
+  if (!iso) return iso;
+  const dt = new Date(iso + "T00:00:00Z");
+  const dow = dt.getUTCDay(); // 0 = domingo, 6 = sábado
+  if (dow === 6) dt.setUTCDate(dt.getUTCDate() - 1);
+  else if (dow === 0) dt.setUTCDate(dt.getUTCDate() - 2);
+  return dt.toISOString().slice(0, 10);
+}
+
 // Alguns registros mais antigos (da planilha original) nunca tiveram a data de
 // 60 dias calculada, porque na época o funcionário ainda nem tinha passado
 // dos 30 dias. Se precisarmos mostrar a etapa de 60 dias e ela não existir,
@@ -38,8 +53,8 @@ function addDays(iso, days) {
 // pessoa "presa" na etapa de 30 dias mesmo depois de decidido que continua.
 function resolveD60(r) {
   if (r.d60) return r.d60;
-  if (r.contratacao) return addDays(r.contratacao, 60);
-  if (r.d30) return addDays(r.d30, 30);
+  if (r.contratacao) return toPreviousFridayIfWeekend(addDays(r.contratacao, 60));
+  if (r.d30) return toPreviousFridayIfWeekend(addDays(r.d30, 30));
   return null;
 }
 

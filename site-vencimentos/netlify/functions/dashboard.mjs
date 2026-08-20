@@ -38,7 +38,7 @@ export default async (req, context) => {
         <td>${escapeHtml(a.setor)}</td>
         <td>${a.admissao ? fmtDate(a.admissao) : "-"}</td>
         <td>${a.etapa}</td>
-        <td>${a.dateIso ? fmtDate(a.dateIso) : "-"}</td>
+        <td class="data-venc">${a.dateIso ? fmtDate(a.dateIso) : "-"}</td>
         <td>${escapeHtml(a.status)}</td>
       </tr>`
     )
@@ -98,11 +98,15 @@ export default async (req, context) => {
   th:hover { background:#3d3d3d; }
   th .arrow { display:inline-block; width: 12px; opacity: 0.6; }
   th.sorted .arrow { opacity: 1; }
-  tr.vencido { background:#fde2e2; }
+  tr.vencido { background:#e53935; color:#fff; font-weight:600; }
+  tr.vencido td { border-bottom: 1px solid #c62828; }
   tr.urgente { background:#fff3cd; }
   tr.ok { background:#fff; }
   tr.concluido { background:#eee; color:#777; }
   tr.hidden { display:none; }
+  td.data-venc { font-weight:700; font-size:15px; }
+  tr.vencido td.data-venc { color:#fff; text-decoration: underline; }
+  tr.urgente td.data-venc { color:#946c00; }
   .legend { margin-top: 14px; font-size: 12px; color:#555; }
   .legend span { display:inline-block; width:12px; height:12px; margin-right:4px; vertical-align:middle; }
   #alertBanner {
@@ -143,13 +147,15 @@ export default async (req, context) => {
     <a class="tab active" href="/">Visualizar</a>
     <a class="tab" href="/gerenciar.html">Gerenciar</a>
     <a class="tab" href="/historico.html">Histórico</a>
+    <a class="tab" href="/relatorio.html">Relatório</a>
+    <a class="tab" href="/editar.html">Editar</a>
     <a class="tab" href="/upload.html">Adicionar dados</a>
   </div>
   <h1>Vencimentos de Contrato de Experiência</h1>
   <div class="sub">Atualizado em ${fmtDate(today)} — ordenado do vencimento mais próximo para o mais distante</div>
   <div class="toolbar">
     <input id="search" type="text" placeholder="Buscar por nome, setor, etapa, data ou status...">
-    <button id="toggleOverdue" type="button">Mostrar vencidos</button>
+    <button id="toggleOverdue" type="button">Mostrar concluídos</button>
     <span id="count"></span>
   </div>
   <table id="tbl">
@@ -168,10 +174,10 @@ export default async (req, context) => {
     </tbody>
   </table>
   <div class="legend">
-    <span style="background:#fde2e2;"></span> vencido &nbsp;
+    <span style="background:#e53935;"></span> vencido — AÇÃO PENDENTE (sempre visível até você decidir em Gerenciar) &nbsp;
     <span style="background:#fff3cd;"></span> vence em até ${LEAD_DAYS} dias &nbsp;
     <span style="background:#fff;border:1px solid #ddd;"></span> ok &nbsp;
-    <span style="background:#eee;border:1px solid #ddd;"></span> concluído (efetivado/demitido, oculto — pesquise o nome ou clique em "Mostrar vencidos" para ver)
+    <span style="background:#eee;border:1px solid #ddd;"></span> concluído (efetivado/demitido, oculto por padrão — pesquise o nome ou clique em "Mostrar concluídos" para ver)
   </div>
 
   <div id="alertBanner">
@@ -202,16 +208,20 @@ export default async (req, context) => {
   const toggleBtn = document.getElementById('toggleOverdue');
   const headers = table.querySelectorAll('th');
 
-  let hideOverdue = true;
+  // Só os "concluídos" (efetivado/demitido) ficam ocultos por padrão, para
+  // não poluir a tela. Os "vencidos" (sem decisão registrada) NUNCA ficam
+  // ocultos por padrão — precisam continuar chamando atenção até alguém
+  // agir em /gerenciar.html.
+  let hideConcluido = true;
 
-  function overdueCount() {
-    return tbody.querySelectorAll('tr.vencido, tr.concluido').length;
+  function concluidoCount() {
+    return tbody.querySelectorAll('tr.concluido').length;
   }
 
   function updateToggleLabel() {
-    const n = overdueCount();
-    toggleBtn.textContent = hideOverdue ? 'Mostrar vencidos (' + n + ')' : 'Ocultar vencidos (' + n + ')';
-    toggleBtn.classList.toggle('active', !hideOverdue);
+    const n = concluidoCount();
+    toggleBtn.textContent = hideConcluido ? 'Mostrar concluídos (' + n + ')' : 'Ocultar concluídos (' + n + ')';
+    toggleBtn.classList.toggle('active', !hideConcluido);
   }
 
   function updateCount() {
@@ -224,16 +234,15 @@ export default async (req, context) => {
     const q = searchInput.value.trim().toLowerCase();
     tbody.querySelectorAll('tr').forEach(function(tr) {
       if (q.length > 0) {
-        // durante uma busca, mostra tudo que combinar, mesmo vencidos e
-        // concluídos ocultos por padrão
+        // durante uma busca, mostra tudo que combinar, mesmo concluídos
+        // ocultos por padrão
         const text = tr.textContent.toLowerCase();
         tr.classList.toggle('hidden', !text.includes(q));
       } else {
-        // "Mostrar vencidos" também revela os concluídos (efetivados/
-        // demitidos) — sem o botão ligado, os dois ficam ocultos por padrão;
-        // com ele ligado, aparecem todos, sem exceção.
-        const isVencidoOuConcluido = tr.classList.contains('vencido') || tr.classList.contains('concluido');
-        tr.classList.toggle('hidden', hideOverdue && isVencidoOuConcluido);
+        // só os concluídos (efetivado/demitido) somem por padrão. Vencidos
+        // ficam sempre visíveis, sem exceção, até serem decididos.
+        const isConcluido = tr.classList.contains('concluido');
+        tr.classList.toggle('hidden', hideConcluido && isConcluido);
       }
     });
     updateCount();
@@ -242,7 +251,7 @@ export default async (req, context) => {
   searchInput.addEventListener('input', applyFilters);
 
   toggleBtn.addEventListener('click', function() {
-    hideOverdue = !hideOverdue;
+    hideConcluido = !hideConcluido;
     updateToggleLabel();
     applyFilters();
   });

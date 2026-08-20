@@ -66,6 +66,18 @@ function addDays(iso, days) {
   return dt.toISOString().slice(0, 10);
 }
 
+// Vencimentos calculados automaticamente (contratação + 30/60 dias corridos)
+// não devem cair em sábado ou domingo, já que os colaboradores não trabalham
+// nesses dias — nesse caso, antecipa para a sexta-feira anterior.
+function toPreviousFridayIfWeekend(iso) {
+  if (!iso) return iso;
+  const dt = new Date(iso + "T00:00:00Z");
+  const dow = dt.getUTCDay(); // 0 = domingo, 6 = sábado
+  if (dow === 6) dt.setUTCDate(dt.getUTCDate() - 1);
+  else if (dow === 0) dt.setUTCDate(dt.getUTCDate() - 2);
+  return dt.toISOString().slice(0, 10);
+}
+
 // rows: array de arrays (linha 0 = cabeçalho, se reconhecido)
 function tableToRecords(rows) {
   if (!rows || !rows.length) return [];
@@ -106,13 +118,27 @@ function tableToRecords(rows) {
   return records;
 }
 
+// descarta linhas de rodapé/cabeçalho de relatório que às vezes acabam
+// caindo na coluna "nome" (ex.: "Total da empresa: 28", "Sistema licenciado
+// para..."). Um nome de pessoa de verdade tem pelo menos duas palavras e não
+// é só número.
+const NOME_INVALIDO_RE = /^(sistema|total|licenciado|para|p[áa]gina|emiss[ãa]o|hora|c[óo]digo|departamento)\b/i;
+function looksLikeName(s) {
+  if (!s) return false;
+  const trimmed = s.trim();
+  if (/^\d+$/.test(trimmed)) return false;
+  if (trimmed.split(/\s+/).length < 2) return false;
+  if (NOME_INVALIDO_RE.test(trimmed)) return false;
+  return true;
+}
+
 function finalizeRecords(records) {
   return records
-    .filter((r) => r.nome)
+    .filter((r) => looksLikeName(r.nome))
     .map((r) => {
       const contratacao = r.contratacao || null;
-      const d30 = r.d30 || (contratacao ? addDays(contratacao, 30) : null);
-      const d60 = r.d60 || (contratacao ? addDays(contratacao, 60) : null);
+      const d30 = r.d30 || (contratacao ? toPreviousFridayIfWeekend(addDays(contratacao, 30)) : null);
+      const d60 = r.d60 || (contratacao ? toPreviousFridayIfWeekend(addDays(contratacao, 60)) : null);
       return {
         nome: r.nome,
         setor: r.setor || "",
@@ -205,13 +231,50 @@ async function extractFromPdf(buffer) {
     function bucketize(line) {
       if (!colAnchors.length) return line.items.map((it) => it.text);
       const cols = new Array(colAnchors.length).fill("");
-      for (const it of line.items) {
-        // maior âncora que é <= x do item (com folga de alguns px)
+
+      function startCol(x) {
         let idx = 0;
         for (let i = 0; i < colAnchors.length; i++) {
-          if (it.x + 3 >= colAnchors[i]) idx = i;
+          if (x + 3 >= colAnchors[i]) idx = i;
         }
-        cols[idx] = cols[idx] ? cols[idx] + " " + it.text : it.text;
+        return idx;
+      }
+
+      const placements = line.items.map((it) => ({ it, idxStart: startCol(it.x) }));
+      // marca de antemão quais colunas já têm dono nessa linha, pra só
+      // repartir texto colado (cargo+departamento sem espaço, por ex.) numa
+      // coluna vizinha que ninguém mais preencheu — evita separar palavras
+      // de um texto legítimo e longo que só esbarra visualmente na próxima
+      // âncora (ex.: cargos compridos como "OPERADOR DE MAQUINAS N2").
+      const filled = new Array(colAnchors.length).fill(false);
+      for (const { idxStart } of placements) filled[idxStart] = true;
+
+      for (const { it, idxStart } of placements) {
+        const endX = it.x + (it.width || 0);
+        let idxEnd = idxStart;
+        for (let i = idxStart + 1; i < colAnchors.length; i++) {
+          if (endX + 3 >= colAnchors[i]) idxEnd = i;
+          else break;
+        }
+
+        if (idxEnd === idxStart || !it.width || !filled.slice(idxStart + 1, idxEnd + 1).every((f) => !f)) {
+          cols[idxStart] = cols[idxStart] ? cols[idxStart] + " " + it.text : it.text;
+          continue;
+        }
+
+        const words = it.text.split(/\s+/).filter(Boolean);
+        const totalChars = it.text.length || 1;
+        let charPos = 0;
+        for (const w of words) {
+          const wordX = it.x + (charPos / totalChars) * it.width;
+          let idx = idxStart;
+          for (let i = idxStart; i <= idxEnd; i++) {
+            if (wordX + 3 >= colAnchors[i]) idx = i;
+          }
+          cols[idx] = cols[idx] ? cols[idx] + " " + w : w;
+          filled[idx] = true;
+          charPos += w.length + 1;
+        }
       }
       return cols;
     }

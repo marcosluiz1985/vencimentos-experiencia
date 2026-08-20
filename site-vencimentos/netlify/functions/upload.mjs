@@ -69,19 +69,21 @@ export default async (req, context) => {
       addedNames.push(rec.nome);
       continue;
     }
-    // já existe um registro com esse nome. Se o cadastrado ficou sem data de
-    // 30/60 dias (ex.: de uma importação anterior que não reconheceu as
-    // colunas do arquivo) e o novo arquivo traz essas datas, completa o
-    // registro em vez de simplesmente ignorar como duplicado.
-    const existingHasDates = Boolean(existing.d30 || existing.d60);
-    const newHasDates = Boolean(rec.d30 || rec.d60);
-    if (!existingHasDates && newHasDates) {
-      existing.setor = existing.setor || rec.setor;
-      existing.contratacao = existing.contratacao || rec.contratacao;
-      existing.d30 = rec.d30 || existing.d30;
-      existing.d60 = rec.d60 || existing.d60;
+    // já existe um registro com esse nome: o arquivo enviado é a fonte da
+    // verdade para setor, contratação e datas de 30/60 dias. Atualiza todo
+    // campo que o arquivo trouxe e for diferente do que já está salvo (sem
+    // apagar um dado bom com uma célula vazia do arquivo).
+    const camposAlterados = [];
+    for (const campo of ["setor", "contratacao", "d30", "d60"]) {
+      const novo = rec[campo];
+      if (novo && novo !== existing[campo]) {
+        camposAlterados.push(`${campo}: ${existing[campo] || "—"} → ${novo}`);
+        existing[campo] = novo;
+      }
+    }
+    if (camposAlterados.length) {
       updated++;
-      updatedNames.push(rec.nome);
+      updatedNames.push(`${rec.nome} (${camposAlterados.join(", ")})`);
     } else {
       dup++;
     }

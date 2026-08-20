@@ -93,6 +93,8 @@ export default async (req, context) => {
     <a class="tab" href="/">Visualizar</a>
     <a class="tab" href="/gerenciar.html">Gerenciar</a>
     <a class="tab active" href="/historico.html">Histórico</a>
+    <a class="tab" href="/relatorio.html">Relatório</a>
+    <a class="tab" href="/editar.html">Editar</a>
     <a class="tab" href="/upload.html">Adicionar dados</a>
   </div>
   <h1>Histórico de decisões</h1>
