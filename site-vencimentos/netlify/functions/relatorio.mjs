@@ -82,6 +82,46 @@ export default async (req, context) => {
   const pct60 = decididos60 ? ((aprov60 / decididos60) * 100).toFixed(1) : null;
   const totalReprovados = reprov30 + reprov60;
 
+  // ---- resumo numérico: efetivados x não efetivados (geral, por mês, por setor) ----
+  // efetivado = decisão de 60 dias "efetivado"; não efetivado = demitido aos 30 ou 60 dias;
+  // em andamento = ainda sem decisão final.
+  const resultado = (r) =>
+    r.status60 === "aprovado" ? "efe" : r.status30 === "reprovado" || r.status60 === "reprovado" ? "nao" : "and";
+  const agrega = (keyFn, sortFn) => {
+    const m = new Map();
+    for (const r of rows) {
+      const k = keyFn(r);
+      if (!m.has(k)) m.set(k, { efe: 0, nao: 0, and: 0, key: r.mesAno || "" });
+      m.get(k)[resultado(r)]++;
+    }
+    return Array.from(m.entries()).sort(sortFn);
+  };
+  const tabelaResumo = (titulo, primeira, entries) => {
+    const tot = { efe: 0, nao: 0, and: 0 };
+    let linhas = "";
+    for (const [k, v] of entries) {
+      tot.efe += v.efe; tot.nao += v.nao; tot.and += v.and;
+      const dec = v.efe + v.nao;
+      linhas += `<tr><td>${escapeHtml(k)}</td><td>${v.efe}</td><td>${v.nao}</td><td>${v.and}</td><td>${v.efe + v.nao + v.and}</td><td>${dec ? Math.round((v.efe / dec) * 100) + "%" : "—"}</td></tr>`;
+    }
+    const dec = tot.efe + tot.nao;
+    linhas += `<tr class="tot"><td>TOTAL</td><td>${tot.efe}</td><td>${tot.nao}</td><td>${tot.and}</td><td>${tot.efe + tot.nao + tot.and}</td><td>${dec ? Math.round((tot.efe / dec) * 100) + "%" : "—"}</td></tr>`;
+    return `<div class="box"><h2>${titulo}</h2><table class="res"><thead><tr><th>${primeira}</th><th>Efetivados</th><th>Não efetivados</th><th>Em andamento</th><th>Total</th><th>% efetivação</th></tr></thead><tbody>${linhas}</tbody></table></div>`;
+  };
+  const porMes = agrega((r) => r.mesAnoLabel || "Sem data", (x, y) => x[1].key.localeCompare(y[1].key));
+  const porSetor = agrega((r) => r.setor || "Sem setor", (x, y) => (y[1].efe + y[1].nao + y[1].and) - (x[1].efe + x[1].nao + x[1].and) || x[0].localeCompare(y[0]));
+  const totEfe = rows.filter((r) => resultado(r) === "efe").length;
+  const totNao = rows.filter((r) => resultado(r) === "nao").length;
+  const totAnd = rows.filter((r) => resultado(r) === "and").length;
+  const resumoHtml = `
+  <div class="kpis">
+    <div class="kpi aprov"><div class="label">Efetivados (geral)</div><div class="value">${totEfe}</div></div>
+    <div class="kpi reprov"><div class="label">Não efetivados (geral)</div><div class="value">${totNao}</div></div>
+    <div class="kpi"><div class="label">Em andamento</div><div class="value">${totAnd}</div></div>
+  </div>
+  <div class="grid">${tabelaResumo("Por mês de contratação", "Mês", porMes)}${tabelaResumo("Por setor", "Setor", porSetor)}</div>
+  <div class="note-res">% efetivação = efetivados / (efetivados + não efetivados). Baseado nas decisões registradas em Gerenciar.</div>`;
+
   const mesesMap = new Map();
   rows
     .slice()
@@ -152,6 +192,13 @@ export default async (req, context) => {
   .kpi.reprov .value { color:#c0392b; }
   .kpi .note { font-size:11px; color:#999; margin-top:4px; }
 
+  h2 { font-size:15px; margin:0 0 8px; }
+  .grid { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:18px; }
+  .box { flex:1; min-width:340px; }
+  table.res td, table.res th { text-align:center; }
+  table.res td:first-child, table.res th:first-child { text-align:left; }
+  table.res tr.tot td { font-weight:700; background:#f0f0f2; }
+  .note-res { font-size:11.5px; color:#888; margin:-8px 0 18px; }
   .toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom: 12px; }
   .filters { display:flex; gap:6px; flex-wrap:wrap; }
   .filters button {
@@ -216,6 +263,8 @@ export default async (req, context) => {
     <div class="kpi aprov"><div class="label">% aprovação — 60 dias</div><div class="value">${pctStr(pct60)}</div><div class="note">${aprov60} aprovados / ${reprov60} reprovados (${andamento60} em andamento)</div></div>
     <div class="kpi reprov"><div class="label">Total reprovados</div><div class="value">${totalReprovados}</div></div>
   </div>
+
+  ${resumoHtml}
 
   <div class="toolbar">
     <input id="search" type="text" placeholder="Buscar por nome ou setor...">
